@@ -26,13 +26,8 @@ import georgovassilis.httprelay.http.JDKHttpImpl;
  */
 public class PrivateRelayProxy implements Runnable {
 
-	//TODO: make configurable
-	final long pauseOnErrorMs = 10000;
-
-	//TODO: make configurable
-	protected String taskUrl = "http://localhost:8080/relay/tasks";
-
-	//TODO: make configurable
+	long pauseOnErrorMs = 10000;
+	protected String taskUrl;
 	protected String backendUrl = "https://www.google.com";
 	protected Logger log = LogManager.getLogger(getClass().getName());
 	protected ObjectMapper mapper = new ObjectMapper();
@@ -43,6 +38,18 @@ public class PrivateRelayProxy implements Runnable {
 	public PrivateRelayProxy(Proxy backendProxy, Proxy relayProxy){
 		this.backendProxy = backendProxy;
 		this.relayProxy = relayProxy;
+	}
+
+	public void setPauseOnErrorMs(long pauseOnErrorMs) {
+		this.pauseOnErrorMs = pauseOnErrorMs;
+	}
+
+	public void setTaskUrl(String taskUrl) {
+		this.taskUrl = taskUrl;
+	}
+
+	public void setBackendUrl(String backendUrl) {
+		this.backendUrl = backendUrl;
 	}
 
 	protected RequestTask getNextRequest() throws Exception {

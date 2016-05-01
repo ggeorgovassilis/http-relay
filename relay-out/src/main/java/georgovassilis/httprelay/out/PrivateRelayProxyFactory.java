@@ -20,6 +20,9 @@ public class PrivateRelayProxyFactory {
 
 	public final static String OPT_PROXY_TO_WEBSERVER = "proxy-to-webserver";
 	public final static String OPT_PROXY_TO_RELAY = "proxy-to-relay";
+	public final static String OPT_TASK_URL = "task-url";
+	public final static String OPT_BACKEND_URL = "backend-url";
+	public final static String OPT_ERROR_PAUSE = "pause-on-errors-ms";
 
 	protected Logger log = LogManager.getLogger(getClass().getName());
 
@@ -45,6 +48,11 @@ public class PrivateRelayProxyFactory {
 				"If specified then a proxy will be used to contact the webserver. Format is protocol://address:port, e.g. http://proxy.example.com:8080 or socks://proxy.example.com:5000");
 		options.addOption("rp", OPT_PROXY_TO_RELAY, true,
 				"If specified then a proxy will be used to contact the public relay. Format is protocol://address:port, e.g. http://proxy.example.com:8080 or socks://proxy.example.com:5000");
+		options.addOption("tu", OPT_TASK_URL, true,
+				"URL where the task hub is running, e.g. http://example.com/relay/tasks");
+		options.addOption("tu", OPT_BACKEND_URL, true,
+				"URL where the firewalled web server is running, e.g. http://intranet.example.com");
+
 		CommandLine cmd = new DefaultParser().parse(options, args);
 
 		Proxy backendProxy = createProxy(cmd.getOptionValue(OPT_PROXY_TO_WEBSERVER));
@@ -53,8 +61,21 @@ public class PrivateRelayProxyFactory {
 			log.info("Using proxy " + backendProxy + " for talking to webserver");
 		if (relayProxy != Proxy.NO_PROXY)
 			log.info("Using proxy " + relayProxy + " for talking to public relay");
+		String taskUrl = cmd.getOptionValue(OPT_TASK_URL);
+		if (taskUrl == null)
+			throw new IllegalArgumentException("Missing "+OPT_TASK_URL);
 
+		String backendUrl = cmd.getOptionValue(OPT_BACKEND_URL);
+		if (backendUrl == null)
+			throw new IllegalArgumentException("Missing "+OPT_BACKEND_URL);
+		
 		PrivateRelayProxy privateRelayProxy = new PrivateRelayProxy(backendProxy, relayProxy);
+		privateRelayProxy.setBackendUrl(backendUrl);
+		privateRelayProxy.setTaskUrl(taskUrl);
+
+		String pauseOnErrorsMs = cmd.getOptionValue(OPT_ERROR_PAUSE);
+		if (pauseOnErrorsMs!=null)
+			privateRelayProxy.setPauseOnErrorMs(Long.parseLong(pauseOnErrorsMs));
 		return privateRelayProxy;
 	}
 
