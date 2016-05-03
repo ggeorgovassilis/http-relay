@@ -22,6 +22,7 @@ import georgovassilis.httprelay.common.ResponseTask;
  */
 public class TaskHub {
 
+	//TODO: clean outdated tasks
 	protected BlockingQueue<RequestTask> requests = new ArrayBlockingQueue<RequestTask>(100);
 	protected Logger log = LogManager.getLogger(TaskHub.class);
 	protected long timeout = 60000;
