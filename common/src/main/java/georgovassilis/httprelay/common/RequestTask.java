@@ -16,11 +16,6 @@ public class RequestTask extends Task {
 	protected String method;
 	
 	/**
-	 * HTTP response to this request
-	 */
-	protected ResponseTask response;
-	
-	/**
 	 * Requested URL. May or may not contain URL parameters; any parameters listed here
 	 * may or may not repeat in the {@link #parameters} map
 	 */
@@ -31,7 +26,7 @@ public class RequestTask extends Task {
 	 * or may be form parameters.
 	 */
 	protected Map<String, String> parameters = new HashMap<String, String>();
-
+	
 	public RequestTask() {
 	}
 
@@ -54,14 +49,6 @@ public class RequestTask extends Task {
 
 	public void setUrl(String url) {
 		this.url = url;
-	}
-
-	public ResponseTask getResponse() {
-		return response;
-	}
-
-	public void setResponse(ResponseTask response) {
-		this.response = response;
 	}
 
 	public String getMethod() {
