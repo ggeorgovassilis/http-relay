@@ -59,8 +59,13 @@ public class JDKHttpImpl implements Http {
 	protected Future<ResponseTask> readResponse(HttpURLConnection conn) throws Exception {
 		ResponseTask r = new ResponseTask();
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		InputStream in = conn.getInputStream();
 		r.setStatus(conn.getResponseCode());
+		InputStream in = null;
+		InputStream err = conn.getErrorStream();
+		if (err != null)
+			in = err;
+		else
+			in = conn.getInputStream();
 		r.setStatusMessage(conn.getResponseMessage());
 		for (int n = 0; true; n++) {
 			String headerName = conn.getHeaderFieldKey(n);

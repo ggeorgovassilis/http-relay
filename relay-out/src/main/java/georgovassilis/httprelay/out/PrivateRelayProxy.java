@@ -26,36 +26,27 @@ import georgovassilis.httprelay.http.JDKHttpImpl;
  */
 public class PrivateRelayProxy implements Runnable {
 
-	long pauseOnErrorMs = 10000;
-	protected String taskUrl;
-	protected String backendUrl = "https://www.google.com";
 	protected Logger log = LogManager.getLogger(getClass().getName());
+	protected long pauseOnErrorMs = 10000;
+	protected String getNextTaskFromUrl;
+	protected String backendUrl;
 	protected ObjectMapper mapper = new ObjectMapper();
 	protected Proxy backendProxy;
 	protected Proxy relayProxy;
 	
 	
-	public PrivateRelayProxy(Proxy backendProxy, Proxy relayProxy){
+	public PrivateRelayProxy(Proxy backendProxy, Proxy relayProxy, long pauseOnErrorMs, String getNextTaskFromUrl, String backendUrl){
 		this.backendProxy = backendProxy;
 		this.relayProxy = relayProxy;
-	}
-
-	public void setPauseOnErrorMs(long pauseOnErrorMs) {
 		this.pauseOnErrorMs = pauseOnErrorMs;
-	}
-
-	public void setTaskUrl(String taskUrl) {
-		this.taskUrl = taskUrl;
-	}
-
-	public void setBackendUrl(String backendUrl) {
+		this.getNextTaskFromUrl = getNextTaskFromUrl;
 		this.backendUrl = backendUrl;
 	}
 
 	protected RequestTask getNextRequest() throws Exception {
 		log.info("Asking public relay for next task");
 		Http http = new JDKHttpImpl(relayProxy);
-		RequestTask request = new RequestTask("GET", taskUrl);
+		RequestTask request = new RequestTask("GET", getNextTaskFromUrl);
 		Future<ResponseTask> future = http.execute(request);
 		ResponseTask response = future.get();
 		if (response.getStatus() == HttpServletResponse.SC_NO_CONTENT) {
@@ -71,7 +62,7 @@ public class PrivateRelayProxy implements Runnable {
 		log.info("Submitting response to public relay for task " + responseTask.getId());
 
 		Http http = new JDKHttpImpl(relayProxy);
-		RequestTask responseToRelay = new RequestTask("POST", taskUrl);
+		RequestTask responseToRelay = new RequestTask("POST", getNextTaskFromUrl);
 		responseToRelay.getHeaders().put("content-type", "application/json; charset=utf-8");
 		byte[] content = mapper.writeValueAsBytes(responseTask);
 		responseToRelay.getHeaders().put("content-length", "" + content.length);
@@ -83,12 +74,14 @@ public class PrivateRelayProxy implements Runnable {
 	}
 
 	protected ResponseTask forwardRequestToWebServer(RequestTask requestTask) throws Exception {
+		log.info("Sending request "+requestTask.getId()+" to "+requestTask.getUrl()+" to webserver");
 		Http http = new JDKHttpImpl(backendProxy);
 		requestTask.setUrl(backendUrl + requestTask.getUrl());
 		Future<ResponseTask> f = http.execute(requestTask);
 
 		ResponseTask responseTask = f.get();
 		responseTask.setId(requestTask.getId());
+		log.info("Webserver returned with task "+requestTask.getId()+" and status code "+responseTask.getStatus());
 		return responseTask;
 	}
 

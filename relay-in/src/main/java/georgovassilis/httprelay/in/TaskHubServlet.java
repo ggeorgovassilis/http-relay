@@ -42,12 +42,12 @@ public class TaskHubServlet extends BaseServlet {
 	}
 
 	protected void tellServerToComeBackLater(HttpServletResponse resp) throws ServletException, IOException {
-		log.info("Telling server that there are no new tasks");
+		log.info("No new tasks for private relay");
 		resp.sendError(HttpServletResponse.SC_NO_CONTENT, "no tasks");
 	}
 
 	protected void giveTaskToServer(RequestTask requestTask, HttpServletResponse resp) throws ServletException, IOException {
-		log.info("Replying with next task " + requestTask.getId() + " to server");
+		log.info("Giving task " + requestTask.getId() + " to private relay");
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		mapper.writeValue(resp.getOutputStream(), requestTask);
 		byte[] bytes = baos.toByteArray();
@@ -58,17 +58,16 @@ public class TaskHubServlet extends BaseServlet {
 		resp.getOutputStream().flush();
 	}
 
-	protected ResponseTask getResponseTask(HttpServletRequest req) throws ServletException, IOException {
+	protected ResponseTask getResponseTaskFromHttpRequest(HttpServletRequest req) throws ServletException, IOException {
 		ResponseTask responseTask = mapper.readValue(req.getInputStream(), ResponseTask.class);
 		return responseTask;
 	}
-
+	
 	/**
 	 * The server-side relay GETs tasks with this method 
 	 */
-	@Override
-	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-		log.info("Server asked for next task");
+	protected void giveTaskToPrivateRelay(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		log.info("Private relay asked for next task");
 		RequestTask requestTask = taskHub.getNextRequestTask();
 		if (requestTask == null)
 			tellServerToComeBackLater(resp);
@@ -79,11 +78,20 @@ public class TaskHubServlet extends BaseServlet {
 	/**
 	 * The server-side relay POSTs completed tasks with this method
 	 */
+	protected void acceptResponseFromPrivateRelay(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		ResponseTask responseTask = getResponseTaskFromHttpRequest(req);
+		log.info("Private relay submits processed task " + responseTask.getId());
+		taskHub.resolveTask(responseTask.getId(), responseTask);
+	}
+
+	@Override
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		giveTaskToPrivateRelay(req, resp);
+	}
+	
+
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-		log.info("Server replies with processed task");
-		ResponseTask responseTask = getResponseTask(req);
-		log.info("Server replies with processed task " + responseTask.getId());
-		taskHub.resolveTask(responseTask.getId(), responseTask);
+		acceptResponseFromPrivateRelay(req, resp);
 	}
 }

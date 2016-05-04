@@ -27,39 +27,26 @@ public class TaskHub {
 	protected Logger log = LogManager.getLogger(TaskHub.class);
 	protected long timeout = 60000;
 	protected boolean ready = false;
-	protected ConcurrentHashMap<String, RequestTask> activeTasks = new ConcurrentHashMap<>();
+	protected ConcurrentHashMap<String, TaskGroup> activeTasks = new ConcurrentHashMap<>();
 
 	public void setReady(boolean value) {
 		this.ready = value;
 	}
 
-	public CompletableFuture<ResponseTask> submitRequestTask(final RequestTask requestTask) {
+	public void submitRequestTask(final RequestTask requestTask, RequestCallback callback) {
 		if (!ready)
-			return null;
+			return;
 		log.info("Queueing task " + requestTask.getId() + " with content "
 				+ (requestTask.getContent() == null ? 0 : requestTask.getContent().length));
-		activeTasks.put(requestTask.getId(), requestTask);
-		CompletableFuture<ResponseTask> cf = CompletableFuture.supplyAsync(() -> {
-			synchronized (requestTask) {
-				try {
-					requests.put(requestTask);
-					requestTask.wait(timeout);
-				} catch (InterruptedException e) {
-				}
-				ResponseTask responseTask = requestTask.getResponse();
-				if (responseTask == null) {
-					log.error("Task " + requestTask.getId() + " timed out");
-					responseTask = new ResponseTask();
-					responseTask.setStatus(HttpServletResponse.SC_NO_CONTENT);
-					responseTask.setContent("Request to backend timed out".getBytes());
-					requests.remove(requestTask);
-				} else
-					log.info("Task " + requestTask.getId() + " returned with "
-							+ (responseTask.getContent() == null ? 0 : responseTask.getContent().length) + " bytes");
-				return responseTask;
-			}
-		});
-		return cf;
+		TaskGroup group = new TaskGroup();
+		group.setRequestTask(requestTask);
+		group.setRequestCallback(callback);
+		activeTasks.put(requestTask.getId(), group);
+		try {
+			requests.put(requestTask);
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	public RequestTask getNextRequestTask() {
@@ -74,10 +61,10 @@ public class TaskHub {
 
 	public void resolveTask(String taskId, ResponseTask responseTask) {
 
-		RequestTask requestTask = activeTasks.get(taskId);
-		synchronized (requestTask) {
-			requestTask.setResponse(responseTask);
-			requestTask.notifyAll();
+		TaskGroup group = activeTasks.remove(taskId);
+		synchronized (group) {
+			group.setResponseTask(responseTask);
+			group.getRequestCallback().onResponseReceived(responseTask);
 		}
 	}
 	

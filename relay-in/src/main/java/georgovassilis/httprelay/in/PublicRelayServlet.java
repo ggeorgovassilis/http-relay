@@ -21,9 +21,11 @@ import georgovassilis.httprelay.common.RequestTask;
 import georgovassilis.httprelay.common.ResponseTask;
 
 /**
- * Servlet which accepts HTTP requests from browsers and puts them into a queue (the {@link TaskHub})
- * from where the private relay draws tasks. The private relay also puts responses into the queue which
- * the {@link PublicRelayServlet} sends back to the browser.
+ * Servlet which accepts HTTP requests from browsers and puts them into a queue
+ * (the {@link TaskHub}) from where the private relay draws tasks. The private
+ * relay also puts responses into the queue which the {@link PublicRelayServlet}
+ * sends back to the browser.
+ * 
  * @author george georgovassilis
  *
  */
@@ -32,6 +34,7 @@ public class PublicRelayServlet extends BaseServlet {
 
 	/**
 	 * API adapter which gets HTTP headers as a map
+	 * 
 	 * @param req
 	 * @return
 	 */
@@ -47,6 +50,7 @@ public class PublicRelayServlet extends BaseServlet {
 
 	/**
 	 * API adapter which gets HTTP parameters as a map
+	 * 
 	 * @param req
 	 * @return
 	 */
@@ -62,11 +66,12 @@ public class PublicRelayServlet extends BaseServlet {
 
 	/**
 	 * API adapter which an HTTP request's contents as a byte array
+	 * 
 	 * @param req
 	 * @return
 	 */
 	protected byte[] getContent(HttpServletRequest req) throws IOException {
-		//TODO: fail on excessively large requests
+		// TODO: fail on excessively large requests
 		ServletInputStream in = req.getInputStream();
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		IOUtils.copy(in, baos);
@@ -75,6 +80,7 @@ public class PublicRelayServlet extends BaseServlet {
 
 	/**
 	 * Convert an {@link HttpServletRequest} into a {@link RequestTask}
+	 * 
 	 * @param req
 	 * @return
 	 * @throws IOException
@@ -95,6 +101,7 @@ public class PublicRelayServlet extends BaseServlet {
 
 	/**
 	 * Copy data from a {@link ResponseTask} into an {@link HttpServletResponse}
+	 * 
 	 * @param task
 	 * @param resp
 	 * @throws IOException
@@ -115,21 +122,25 @@ public class PublicRelayServlet extends BaseServlet {
 	protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		log.info("Accepted request from " + req.getRemoteAddr() + " " + req.getMethod() + " " + req.getRequestURL());
 		RequestTask requestTask = packRequestIntoTask((HttpServletRequest) req);
-		CompletableFuture<ResponseTask> responseTask = taskHub.submitRequestTask(requestTask);
-		if (responseTask==null){
-			log.info("Disregarding request, application isn't fully loaded yet");
-			return;
-		}
 		AsyncContext context = req.startAsync();
-		responseTask.thenAccept(response -> {
-			try {
-				packTaskIntoResponse(response, (HttpServletResponse) context.getResponse());
-			} catch (Exception e) {
-				log.error(e.getMessage(), e);
-				throw new RuntimeException(e);
+		taskHub.submitRequestTask(requestTask, new RequestCallback() {
+
+			@Override
+			public void onResponseReceived(ResponseTask response) {
+				try {
+					packTaskIntoResponse(response, (HttpServletResponse) context.getResponse());
+				} catch (Exception e) {
+					log.error(e.getMessage(), e);
+					throw new RuntimeException(e);
+				} finally {
+					context.complete();
+				}
 			}
-			finally{
+
+			@Override
+			public void onError(Exception e) {
 				context.complete();
+				throw new RuntimeException(e);
 			}
 		});
 

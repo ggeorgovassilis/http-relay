@@ -12,7 +12,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Parses command line arguments and constructs a {@link PrivateRelayProxy} instance
+ * Parses command line arguments and constructs a {@link PrivateRelayProxy}
+ * instance
+ * 
  * @author george georgovassilis
  *
  */
@@ -63,19 +65,20 @@ public class PrivateRelayProxyFactory {
 			log.info("Using proxy " + relayProxy + " for talking to public relay");
 		String taskUrl = cmd.getOptionValue(OPT_TASK_URL);
 		if (taskUrl == null)
-			throw new IllegalArgumentException("Missing "+OPT_TASK_URL);
+			throw new IllegalArgumentException("Missing " + OPT_TASK_URL);
 
 		String backendUrl = cmd.getOptionValue(OPT_BACKEND_URL);
 		if (backendUrl == null)
-			throw new IllegalArgumentException("Missing "+OPT_BACKEND_URL);
-		
-		PrivateRelayProxy privateRelayProxy = new PrivateRelayProxy(backendProxy, relayProxy);
-		privateRelayProxy.setBackendUrl(backendUrl);
-		privateRelayProxy.setTaskUrl(taskUrl);
+			throw new IllegalArgumentException("Missing " + OPT_BACKEND_URL);
 
-		String pauseOnErrorsMs = cmd.getOptionValue(OPT_ERROR_PAUSE);
-		if (pauseOnErrorsMs!=null)
-			privateRelayProxy.setPauseOnErrorMs(Long.parseLong(pauseOnErrorsMs));
+		String spauseOnErrorsMs = cmd.getOptionValue(OPT_ERROR_PAUSE);
+		long pauseOnErrorMs = 10000;
+		if (spauseOnErrorsMs != null)
+			pauseOnErrorMs = Long.parseLong(spauseOnErrorsMs);
+
+		PrivateRelayProxy privateRelayProxy = new PrivateRelayProxy(backendProxy, relayProxy, pauseOnErrorMs, taskUrl,
+				backendUrl);
+
 		return privateRelayProxy;
 	}
 
