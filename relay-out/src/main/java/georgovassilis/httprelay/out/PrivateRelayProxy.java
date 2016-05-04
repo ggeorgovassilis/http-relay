@@ -21,7 +21,7 @@ import georgovassilis.httprelay.http.JDKHttpImpl;
 /**
  * Private relay which polls a public relay for {@link RequestTask}s, sends them as HTTP requests to a backend web server, then
  * packages the response as a {@link ResponseTask} and sends it back to the public relay.
- * @author george georgovassiis
+ * @author george georgovassilis
  *
  */
 public class PrivateRelayProxy implements Runnable {

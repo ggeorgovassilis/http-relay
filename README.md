@@ -84,6 +84,7 @@ instances of private and public relays (they are stateless, sort of, so that's o
 * implement SSL traffic/termination between the private relay and the public relay
 * general network security
 * restrict access to the public relay's task queue to intranet IP addresses
+* modify HTTP headers, especially Host and Referrer, for web servers expecting traffic from a different domain than the public relay runs under
 
       
               Internet             │   │            Intranet

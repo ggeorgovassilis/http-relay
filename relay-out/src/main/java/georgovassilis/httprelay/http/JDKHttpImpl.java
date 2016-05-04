@@ -8,6 +8,8 @@ import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
@@ -56,17 +58,8 @@ public class JDKHttpImpl implements Http {
 		return conn;
 	}
 
-	protected Future<ResponseTask> readResponse(HttpURLConnection conn) throws Exception {
-		ResponseTask r = new ResponseTask();
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		r.setStatus(conn.getResponseCode());
-		InputStream in = null;
-		InputStream err = conn.getErrorStream();
-		if (err != null)
-			in = err;
-		else
-			in = conn.getInputStream();
-		r.setStatusMessage(conn.getResponseMessage());
+	protected Map<String, String> getResponseHeaders(HttpURLConnection conn) {
+		Map<String, String> headers = new HashMap<>();
 		for (int n = 0; true; n++) {
 			String headerName = conn.getHeaderFieldKey(n);
 			String headerValue = conn.getHeaderField(n);
@@ -77,21 +70,39 @@ public class JDKHttpImpl implements Http {
 				continue;
 			if (headerName == null)
 				break;
-			r.getHeaders().put(headerName, headerValue);
+			headers.put(headerName, headerValue);
 		}
+		return headers;
+	}
 
-		IOUtils.copy(in, baos);
-		r.setContent(baos.toByteArray());
+	protected CompletableFuture<ResponseTask> readResponse(HttpURLConnection conn) throws Exception {
+		CompletableFuture<ResponseTask> f = CompletableFuture.supplyAsync(() -> {
+			try {
+				ResponseTask r = new ResponseTask();
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				r.setStatus(conn.getResponseCode());
+				InputStream in = null;
+				InputStream err = conn.getErrorStream();
+				if (err != null)
+					in = err;
+				else
+					in = conn.getInputStream();
+				r.setStatusMessage(conn.getResponseMessage());
+				r.getHeaders().putAll(getResponseHeaders(conn));
+				IOUtils.copy(in, baos);
+				r.setContent(baos.toByteArray());
 
-		in.close();
-		conn.disconnect();
-
-		CompletableFuture<ResponseTask> f = new CompletableFuture<ResponseTask>();
-		f.complete(r);
+				in.close();
+				conn.disconnect();
+				return r;
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		});
 		return f;
 	}
 
-	public Future<ResponseTask> execute(RequestTask request) throws IOException {
+	public CompletableFuture<ResponseTask> execute(RequestTask request) throws IOException {
 		try {
 			HttpURLConnection conn = openConnection(request);
 			return readResponse(conn);

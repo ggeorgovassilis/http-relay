@@ -1,6 +1,7 @@
 package georgovassilis.httprelay.http;
 
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 import georgovassilis.httprelay.common.RequestTask;
@@ -20,6 +21,6 @@ public interface Http {
 	 * @return
 	 * @throws IOException
 	 */
-	Future<ResponseTask> execute(RequestTask request) throws IOException;
+	CompletableFuture<ResponseTask> execute(RequestTask request) throws IOException;
 	
 }
