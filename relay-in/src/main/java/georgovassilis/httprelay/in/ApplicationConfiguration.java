@@ -22,6 +22,7 @@ public class ApplicationConfiguration extends HttpServlet {
 	public void init(ServletConfig config) throws ServletException {
 		super.init(config);
 		taskHub = new TaskHub();
+		taskHub.start();
 		config.getServletContext().setAttribute(TaskHub.class.getName(), taskHub);
 	}
 

@@ -6,8 +6,9 @@
 		</Console>
 	</Appenders>
 	<Loggers>
-		<Logger name="org.apache.log4j.xml" level="info" />
-		<Root level="info">
+		<Logger name="org.apache.log4j.xml" level="debug" />
+		<Logger name="georgovassilis.httprelay.out.PublicRelayServlet" level="debug" />
+		<Root level="debug">
 			<AppenderRef ref="STDOUT" />
 		</Root>
 	</Loggers>

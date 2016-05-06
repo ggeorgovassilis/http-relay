@@ -131,6 +131,11 @@ public class PublicRelayServlet extends BaseServlet {
 					packTaskIntoResponse(response, (HttpServletResponse) context.getResponse());
 				} catch (Exception e) {
 					log.error(e.getMessage(), e);
+					try {
+						//this may fail if a writer/output stream has been used earlier
+						e.printStackTrace(resp.getWriter());
+					} catch (IOException e1) {
+					}
 					throw new RuntimeException(e);
 				} finally {
 					context.complete();

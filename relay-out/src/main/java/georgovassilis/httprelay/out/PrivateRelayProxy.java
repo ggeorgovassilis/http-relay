@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import georgovassilis.httprelay.common.RequestTask;
 import georgovassilis.httprelay.common.ResponseTask;
 import georgovassilis.httprelay.http.Http;
+import georgovassilis.httprelay.http.HttpFactory;
 import georgovassilis.httprelay.http.JDKHttpImpl;
 
 /**
@@ -31,37 +32,37 @@ public class PrivateRelayProxy implements Runnable {
 	protected String getNextTaskFromUrl;
 	protected String backendUrl;
 	protected ObjectMapper mapper = new ObjectMapper();
-	protected Proxy backendProxy;
-	protected Proxy relayProxy;
+	protected HttpFactory backendConnectionFactory;
+	protected HttpFactory relayConnectionFactory;
 	
 	
-	public PrivateRelayProxy(Proxy backendProxy, Proxy relayProxy, long pauseOnErrorMs, String getNextTaskFromUrl, String backendUrl){
-		this.backendProxy = backendProxy;
-		this.relayProxy = relayProxy;
+	public PrivateRelayProxy(HttpFactory backendConnectionFactory, HttpFactory relayConnectionFactory, long pauseOnErrorMs, String getNextTaskFromUrl, String backendUrl){
+		this.backendConnectionFactory = backendConnectionFactory;
+		this.relayConnectionFactory = relayConnectionFactory;
 		this.pauseOnErrorMs = pauseOnErrorMs;
 		this.getNextTaskFromUrl = getNextTaskFromUrl;
 		this.backendUrl = backendUrl;
 	}
 
 	protected RequestTask getNextRequest() throws Exception {
-		log.info("Asking public relay for next task");
-		Http http = new JDKHttpImpl(relayProxy);
+		log.debug("Asking public relay for next task");
+		Http http = relayConnectionFactory.create();
 		RequestTask request = new RequestTask("GET", getNextTaskFromUrl);
 		Future<ResponseTask> future = http.execute(request);
 		ResponseTask response = future.get();
 		if (response.getStatus() == HttpServletResponse.SC_NO_CONTENT) {
-			log.info("No new tasks yet, trying again later");
+			log.debug("No new tasks yet, trying again later");
 			return null;
 		}
 		RequestTask requestTask = mapper.readValue(response.getContent(), RequestTask.class);
-		log.info("Public relay gave task " + requestTask.getId());
+		log.info("Received request from relay " + requestTask.getId());
 		return requestTask;
 	}
 
 	protected void submitResponse(ResponseTask responseTask) throws Exception {
-		log.info("Submitting response to public relay for task " + responseTask.getId());
+		log.debug("Submitting response to public relay for task " + responseTask.getId());
 
-		Http http = new JDKHttpImpl(relayProxy);
+		Http http = relayConnectionFactory.create();
 		RequestTask responseToRelay = new RequestTask("POST", getNextTaskFromUrl);
 		responseToRelay.getHeaders().put("content-type", "application/json; charset=utf-8");
 		byte[] content = mapper.writeValueAsBytes(responseTask);
@@ -69,19 +70,19 @@ public class PrivateRelayProxy implements Runnable {
 		responseToRelay.setContent(content);
 		Future<ResponseTask> f = http.execute(responseToRelay);
 		ResponseTask r = f.get();
-		log.info("Finished submitting response to public relay for task " + responseTask.getId() + ", relay responded with "
+		log.info("Submitted response to public relay for task " + responseTask.getId() + ", relay responded with "
 				+ r.getStatus());
 	}
 
 	protected ResponseTask forwardRequestToWebServer(RequestTask requestTask) throws Exception {
-		log.info("Sending request "+requestTask.getId()+" to "+requestTask.getUrl()+" to webserver");
-		Http http = new JDKHttpImpl(backendProxy);
+		log.debug("Sending request "+requestTask.getId()+" to "+requestTask.getUrl()+" to webserver");
+		Http http = backendConnectionFactory.create();
 		requestTask.setUrl(backendUrl + requestTask.getUrl());
 		Future<ResponseTask> f = http.execute(requestTask);
 
 		ResponseTask responseTask = f.get();
 		responseTask.setId(requestTask.getId());
-		log.info("Webserver returned with task "+requestTask.getId()+" and status code "+responseTask.getStatus());
+		log.debug("Webserver returned with task "+requestTask.getId()+" and status code "+responseTask.getStatus());
 		return responseTask;
 	}
 

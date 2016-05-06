@@ -11,6 +11,8 @@ import org.apache.commons.cli.Options;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import georgovassilis.httprelay.http.HttpFactory;
+
 /**
  * Parses command line arguments and constructs a {@link PrivateRelayProxy}
  * instance
@@ -22,6 +24,8 @@ public class PrivateRelayProxyFactory {
 
 	public final static String OPT_PROXY_TO_WEBSERVER = "proxy-to-webserver";
 	public final static String OPT_PROXY_TO_RELAY = "proxy-to-relay";
+	public final static String OPT_SKIP_WEBSERVER_CERTIFICATE_VALIDATION = "skip-backend-certificate-validation";
+	public final static String OPT_SKIP_RELAY_CERTIFICATE_VALIDATION = "skip-relay-certificate-validation";
 	public final static String OPT_TASK_URL = "task-url";
 	public final static String OPT_BACKEND_URL = "backend-url";
 	public final static String OPT_ERROR_PAUSE = "pause-on-errors-ms";
@@ -54,6 +58,9 @@ public class PrivateRelayProxyFactory {
 				"URL where the task hub is running, e.g. http://example.com/relay/tasks");
 		options.addOption("tu", OPT_BACKEND_URL, true,
 				"URL where the firewalled web server is running, e.g. http://intranet.example.com");
+		
+		options.addOption("sbv", OPT_SKIP_WEBSERVER_CERTIFICATE_VALIDATION, false, "Skip validation of backend certificates");
+		options.addOption("srv", OPT_SKIP_RELAY_CERTIFICATE_VALIDATION, false, "Skip validation of relay certificates");
 
 		CommandLine cmd = new DefaultParser().parse(options, args);
 
@@ -76,8 +83,13 @@ public class PrivateRelayProxyFactory {
 		if (spauseOnErrorsMs != null)
 			pauseOnErrorMs = Long.parseLong(spauseOnErrorsMs);
 
-		PrivateRelayProxy privateRelayProxy = new PrivateRelayProxy(backendProxy, relayProxy, pauseOnErrorMs, taskUrl,
-				backendUrl);
+		boolean validateBackendCertificates = !cmd.hasOption(OPT_SKIP_WEBSERVER_CERTIFICATE_VALIDATION);
+		boolean validateRelayCertificates = !cmd.hasOption(OPT_SKIP_RELAY_CERTIFICATE_VALIDATION);
+		
+		HttpFactory backendConnectionFactory = new HttpFactory(backendProxy, validateBackendCertificates);
+		HttpFactory relayConnectionFactory = new HttpFactory(relayProxy, validateRelayCertificates);
+		PrivateRelayProxy privateRelayProxy = new PrivateRelayProxy(backendConnectionFactory, relayConnectionFactory,
+				pauseOnErrorMs, taskUrl, backendUrl);
 
 		return privateRelayProxy;
 	}

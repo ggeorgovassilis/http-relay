@@ -13,7 +13,12 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSocketFactory;
+
 import org.apache.commons.io.IOUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import georgovassilis.httprelay.common.RequestTask;
 import georgovassilis.httprelay.common.ResponseTask;
@@ -28,9 +33,12 @@ public class JDKHttpImpl implements Http {
 
 	protected Proxy proxy = null;
 	protected int connectionTimeoutMs = 30000;
+	protected SSLSocketFactory sslSocketFactory;
+	protected Logger log = LogManager.getLogger(getClass().getName());
 
-	public JDKHttpImpl(Proxy proxy) {
+	protected JDKHttpImpl(Proxy proxy, SSLSocketFactory sslSocketFactory) {
 		this.proxy = proxy;
+		this.sslSocketFactory = sslSocketFactory;
 	}
 
 	protected boolean doesPost(RequestTask request) {
@@ -38,19 +46,29 @@ public class JDKHttpImpl implements Http {
 	}
 
 	protected HttpURLConnection openConnection(RequestTask request) throws IOException {
+		log.debug("Creating url descriptor to "+request.getUrl());
 		URL url = new URL(request.getUrl());
 		HttpURLConnection conn = (HttpURLConnection) (proxy == null ? url.openConnection() : url.openConnection(proxy));
+		if (conn instanceof HttpsURLConnection && sslSocketFactory != null) {
+			log.debug("Setting SSL socket factory on connection");
+			((HttpsURLConnection) conn).setSSLSocketFactory(sslSocketFactory);
+		}
 		conn.setRequestMethod(request.getMethod());
-		for (String header : request.getHeaders().keySet())
-			conn.setRequestProperty(header, request.getHeaders().get(header));
+		for (String header : request.getHeaders().keySet()){
+			String value = request.getHeaders().get(header);
+			log.debug("Setting HTTP header on connection "+header+"="+value);
+			conn.setRequestProperty(header, value);
+		}
 
 		boolean postSomethingToServer = doesPost(request);
 		conn.setDoOutput(postSomethingToServer);
 		conn.setDoInput(true);
 		conn.setConnectTimeout(connectionTimeoutMs);
+		log.debug("Connecting");
 		conn.connect();
 		OutputStream out = null;
 		if (postSomethingToServer) {
+			log.debug("Writing "+request.getContent().length+" bytes into connection");
 			out = conn.getOutputStream();
 			out.write(request.getContent());
 			out.flush();
@@ -70,6 +88,7 @@ public class JDKHttpImpl implements Http {
 				continue;
 			if (headerName == null)
 				break;
+			log.debug("Reading response header "+headerName+"="+headerValue);
 			headers.put(headerName, headerValue);
 		}
 		return headers;
@@ -78,6 +97,7 @@ public class JDKHttpImpl implements Http {
 	protected CompletableFuture<ResponseTask> readResponse(HttpURLConnection conn) throws Exception {
 		CompletableFuture<ResponseTask> f = CompletableFuture.supplyAsync(() -> {
 			try {
+				log.debug("Reading response for "+conn.getURL());
 				ResponseTask r = new ResponseTask();
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				r.setStatus(conn.getResponseCode());
@@ -88,10 +108,11 @@ public class JDKHttpImpl implements Http {
 				else
 					in = conn.getInputStream();
 				r.setStatusMessage(conn.getResponseMessage());
+				log.debug("Response was "+r.getStatus()+" "+r.getStatusMessage());
 				r.getHeaders().putAll(getResponseHeaders(conn));
 				IOUtils.copy(in, baos);
 				r.setContent(baos.toByteArray());
-
+				log.debug("Read response payload "+r.getContent().length+" bytes");
 				in.close();
 				conn.disconnect();
 				return r;
