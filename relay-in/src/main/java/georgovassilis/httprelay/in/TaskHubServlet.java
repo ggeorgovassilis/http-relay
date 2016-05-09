@@ -17,7 +17,7 @@ import georgovassilis.httprelay.common.ResponseTask;
  * The private relay (long-)polls for {@link RequestTask}s with an HTTP GET request
  * and answers back with a {@link ResponseTask} through an HTTP POST request.
  * Unfortunately it is not possible to combine those two requests into one because some HTTP servers/proxies/
- * servlet containers won't allow the private relay to post data over the same HTTP connection after it has received
+ * publicRelay containers won't allow the private relay to post data over the same HTTP connection after it has received
  * the {@link RequestTask}, so it has to perform a second HTTP request with the {@link ResponseTask} data.
  * @author george georgovassilis
  *

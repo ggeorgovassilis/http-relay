@@ -22,7 +22,7 @@ import georgovassilis.httprelay.common.ResponseTask;
 
 /**
  * Servlet which accepts HTTP requests from browsers and puts them into a queue
- * (the {@link TaskHub}) from where the private relay draws tasks. The private
+ * (the {@link TaskHubImpl}) from where the private relay draws tasks. The private
  * relay also puts responses into the queue which the {@link PublicRelayServlet}
  * sends back to the browser.
  * 
@@ -122,7 +122,7 @@ public class PublicRelayServlet extends BaseServlet {
 	protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		log.info("Accepted request from " + req.getRemoteAddr() + " " + req.getMethod() + " " + req.getRequestURL());
 		RequestTask requestTask = packRequestIntoTask((HttpServletRequest) req);
-		AsyncContext context = req.startAsync();
+		AsyncContext context = req.startAsync(req, resp);
 		taskHub.submitRequestTask(requestTask, new RequestCallback() {
 
 			@Override

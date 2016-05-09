@@ -5,8 +5,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 
 /**
- * Abusing this servlet to set up any shared objects between other servlets. I 
- * should read up on the servlet container specification for a better way...
+ * Abusing this publicRelay to set up any shared objects between other servlets. I 
+ * should read up on the publicRelay container specification for a better way...
  * @author george georgovassilis
  *
  */
@@ -14,21 +14,21 @@ import javax.servlet.http.HttpServlet;
 public class ApplicationConfiguration extends HttpServlet {
 
 	/**
-	 * Shared reference to the {@link TaskHub}
+	 * Shared reference to the {@link TaskHubImpl}
 	 */
-	protected TaskHub taskHub;
+	protected TaskHubImpl taskHubImpl;
 	
 	@Override
 	public void init(ServletConfig config) throws ServletException {
 		super.init(config);
-		taskHub = new TaskHub();
-		taskHub.start();
-		config.getServletContext().setAttribute(TaskHub.class.getName(), taskHub);
+		taskHubImpl = new TaskHubImpl();
+		taskHubImpl.start();
+		config.getServletContext().setAttribute(TaskHubImpl.class.getName(), taskHubImpl);
 	}
 
 	@Override
 	public void destroy() {
-		taskHub.close();
+		taskHubImpl.close();
 		super.destroy();
 		
 	}

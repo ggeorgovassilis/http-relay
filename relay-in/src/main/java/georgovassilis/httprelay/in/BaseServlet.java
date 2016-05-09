@@ -7,7 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Base class for servlets which contributes shared objects such as loggers and the {@link TaskHub}
+ * Base class for servlets which contributes shared objects such as loggers and the {@link TaskHubImpl}
  * @author george georgovassilis
  *
  */
