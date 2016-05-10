@@ -58,6 +58,10 @@ public class PublicRelayServletTest {
 		request.setAsyncSupported(true);
 		request.setMethod("GET");
 		request.setRequestURI("http://proxied-website.test/");
+		request.addHeader("X-Request-Header", "header value");
+		request.setPathInfo("/");
+		request.setQueryString("param=value");
+		request.setParameter("parameter", "value");
 		
 		MockHttpServletResponse response = new MockHttpServletResponse();
 		MockAsyncContext asyncContext = new MockAsyncContext(request, response);
@@ -71,6 +75,10 @@ public class PublicRelayServletTest {
 		
 		when(taskHub.submitRequestTask(any(RequestTask.class), any(RequestCallback.class))).then(new BaseAnswer<Void>() {
 			Void execute(RequestTask requestTask, RequestCallback callback){
+				assertEquals("GET",requestTask.getMethod());
+				assertEquals("/?param=value", requestTask.getUrl());
+				assertEquals("header value", requestTask.getHeaders().get("X-Request-Header"));
+				assertEquals("value", requestTask.getParameters().get("parameter"));
 				expectedResponse.setId(requestTask.getId());
 				callback.onResponseReceived(expectedResponse);
 				return null;
