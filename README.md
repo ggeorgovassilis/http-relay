@@ -88,19 +88,19 @@ instances of private and public relays (they are stateless, sort of, so that's o
 
 
 
-                Internet             │   │            Intranet
-                                     │F W│                                   
-       ┌─────────┐    ┌─────────┐    │I A│      ┌─────────┐     ┌─────────┐ 
-       │ browser │--->│ HAproxy │<---│R L│<-----│ private │---->│ web     │ 
-       │         │    │         │    │E L│      │ relays  │┐    │ server  │ 
-       └─────────┘    └─────────┘    │   │      └┬────────┘│┐   └─────────┘ 
-                           │         │   │       └┬────────┘│                
-                      ┌─────────┐    │   │        └─────────┘ 
-                      │ public  │┐   │   │ 
-                      │ relays  ││┐  │   │ 
-                      └┬────────┘││  │   │ 
-                       └┬────────┘│                                 
-                        └─────────┘                        
+               Internet           │   │    Intranet
+                                  │F W│                                   
+    ┌─────────┐    ┌─────────┐    │I A│    ┌─────────┐     ┌─────────┐ 
+    │ browser │--->│ HAproxy │<---│R L│<---│ private │---->│ web     │ 
+    │         │    │         │    │E L│    │ relays  │┐    │ server  │ 
+    └─────────┘    └─────────┘    │   │    └┬────────┘│┐   └─────────┘ 
+                        │         │   │     └┬────────┘│                
+                   ┌─────────┐    │   │      └─────────┘ 
+                   │ public  │┐   │   │ 
+                   │ relays  ││┐  │   │ 
+                   └┬────────┘││  │   │ 
+                    └┬────────┘│                                 
+                     └─────────┘                        
                        
 
 to be continued...
