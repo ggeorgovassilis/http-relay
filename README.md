@@ -100,4 +100,6 @@ instances of private and public relays (they are stateless, sort of, so that's o
                      └┬────────┘││  │   │ 
                       └┬────────┘│                                 
                        └─────────┘                        
-            
+                       
+
+to be continued...
