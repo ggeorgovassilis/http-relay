@@ -87,6 +87,7 @@ instances of private and public relays (they are stateless, sort of, so that's o
 * modify HTTP headers, especially Host and Referrer, for web servers expecting traffic from a different domain than the public relay runs under
 
 
+
                 Internet             │   │            Intranet
                                      │F W│                                   
        ┌─────────┐    ┌─────────┐    │I A│      ┌─────────┐     ┌─────────┐ 
