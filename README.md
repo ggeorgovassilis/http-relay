@@ -86,7 +86,7 @@ instances of private and public relays (they are stateless, sort of, so that's o
 * restrict access to the public relay's task queue to intranet IP addresses
 * modify HTTP headers, especially Host and Referrer, for web servers expecting traffic from a different domain than the public relay runs under
 
-
+<pre>
 
                Internet           │   │    Intranet
                                   │F W│                                   
@@ -101,6 +101,6 @@ instances of private and public relays (they are stateless, sort of, so that's o
                    └┬────────┘││  │   │ 
                     └┬────────┘│                                 
                      └─────────┘                        
-                       
+</pre>                       
 
 to be continued...
