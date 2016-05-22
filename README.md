@@ -1,10 +1,19 @@
 # http-relay
-A transparent HTTP relay used to access web applications behind a firewall. This is work in progress not intended for
-either experimental or production use. Use at your own risk.
+A transparent HTTP relay which is used to access web applications behind a firewall. The typical scenario would be allowing
+web browsers with public internet access to connect to a web application behind a firewall that does not allow incoming connections
+to the web application. 
+This is work in progress not intended for either experimental or production use. Use at your own risk.
 
 ## Functional overview
 
-http-relay is a non-invasive HTTP tunnel which tunnels HTTP requests from web clients such as browsers through a firewall to a web server. It deliberately is transparent to both the browser and the web server, requiring no modifications or changing settings in either.
+http-relay is a non-invasive HTTP tunnel which tunnels HTTP requests from web clients such as browsers through a firewall 
+to a web server. It deliberately is transparent to both the browser and the web server, requiring no modifications or changing 
+settings in either, but it requires installation and operation of two programmes:
+
+- A public relay which is installed on a public server. It needs to be accessible by web browsers over the internet.
+- A private relay which is installed in the same network environment like the firewalled application. The private relay needs to be
+  able to make outgoing HTTP connections to both the web application and the public relay.
+
 
 ### Schematic overview of the components involved
       
